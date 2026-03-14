@@ -13,17 +13,9 @@ app.use(express.json());
 
 // Allow frontend requests
 // Allow localhost or 127.0.0.1 origins (including ports) and requests without an Origin header
-const localOriginRegex = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 app.use(cors({
-    origin: function(origin, callback) {
-        // allow requests with no origin (e.g. curl, some clients)
-        if (!origin) return callback(null, true);
-        // allow if origin matches localhost or 127.0.0.1 with any port
-        if (localOriginRegex.test(origin)) return callback(null, true);
-        // otherwise do not allow CORS (respond without CORS headers)
-        return callback(null, false);
-    },
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 }));
 
 // ------------------------------
