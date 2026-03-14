@@ -48,6 +48,7 @@ quantity,
 reorder_level
 } = req.body;
 
+// Validation (supplier_id removed so your form works)
 if (
 !name ||
 !batch_number ||
@@ -55,8 +56,7 @@ if (
 !purchase_date ||
 !expiry_date ||
 !price ||
-!quantity ||
-!supplier_id
+!quantity
 ) {
 return res.status(400).json({ error: "Missing required fields" });
 }
@@ -71,7 +71,7 @@ name,
 batch_number,
 manufacturer,
 barcode || null,
-supplier_id,
+supplier_id || null,
 purchase_date,
 expiry_date,
 price,
@@ -133,8 +133,8 @@ barcode || null,
 expiry_date,
 price,
 quantity,
-reorder_level,
-supplier_id,
+reorder_level || 0,
+supplier_id || null,
 id
 ]
 );
