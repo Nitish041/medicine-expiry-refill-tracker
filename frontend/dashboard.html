@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard • Medicine Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="page-gradient">
+
+  <!-- ============================
+       NAVBAR
+  ============================= -->
+  <nav class="navbar fixed-top" style="background: linear-gradient(90deg,#10b981,#059669); box-shadow:0 6px 18px rgba(0,0,0,.06); z-index: 100;">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a class="navbar-brand text-white fw-bold" href="dashboard.html">🏥 Medicine Tracker</a>
+
+      <div class="d-none d-md-flex gap-2">
+        <a class="btn btn-sm btn-outline-light" href="dashboard.html">Dashboard</a>
+        <a class="btn btn-sm btn-outline-light" href="view_medicines.html">View Medicines</a>
+        <a class="btn btn-sm btn-outline-light" href="add_medicine.html">Add Medicine</a>
+        <a class="btn btn-sm btn-outline-light" href="suppliers.html">Suppliers</a>
+        <a class="btn btn-sm btn-outline-light" href="alerts.html">Alerts</a>
+        <a class="btn btn-sm btn-outline-light" href="scanner.html">Scanner</a>
+      </div>
+
+      <div class="d-flex gap-2 align-items-center">
+        <span id="navUser" class="text-white me-2 d-none d-md-inline"></span>
+        <button class="btn btn-outline-light btn-sm" onclick="logoutAndRedirect()">Logout</button>
+        <button class="btn btn-light btn-sm d-md-none" type="button" id="mobileMenuBtn">Menu</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="fixed-top-spacer"></div>
+
+  <!-- ============================
+       DASHBOARD CONTENT
+  ============================= -->
+  <div class="container mt-4" style="position: relative; z-index: 10;">
+
+    <h2 class="fw-bold mb-1" style="color: var(--green-main);">Dashboard</h2>
+    <p class="text-muted">Quick overview of inventory health, expiry alerts, and stock levels.</p>
+
+    <!-- ========== SUMMARY CARDS ========== -->
+    <div class="row g-3 mt-3">
+
+      <div class="col-md-3">
+        <div class="card text-center p-4 card-glow stat-card">
+          <div class="stat-label">Total Medicines</div>
+          <div class="stat-value" id="totalMedicines">0</div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="card text-center p-4 card-glow stat-card">
+          <div class="stat-label">Low Stock</div>
+          <div class="stat-value" id="lowStock">0</div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="card text-center p-4 card-glow stat-card">
+          <div class="stat-label">Near Expiry</div>
+          <div class="stat-value" id="nearExpiry">0</div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="card text-center p-4 card-glow stat-card">
+          <div class="stat-label">Expired</div>
+          <div class="stat-value" id="expired">0</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========== SHORTCUT BUTTONS ========== -->
+    <div class="row mt-4">
+      <div class="col-md-12">
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-primary" href="add_medicine.html">+ Add Medicine</a>
+          <a class="btn btn-outline-primary" href="view_medicines.html">View Medicines</a>
+          <a class="btn btn-outline-primary" href="suppliers.html">Manage Suppliers</a>
+          <a class="btn btn-outline-primary" href="alerts.html">Alerts & Reports</a>
+          <a class="btn btn-success" href="scanner.html">Open POS Scanner</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== ALERTS SECTION ========== -->
+    <div class="row mt-5">
+      <div class="col-md-12">
+        <div class="card p-4">
+          <h5>Alerts</h5>
+          <p class="text-muted small">Important inventory warnings.</p>
+
+          <div id="dashboardAlerts"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/app.js"></script>
+
+  <script>
+    async function loadDashboard() {
+      try {
+        const medicines = await apiGet("/medicines");
+
+        // Total
+        document.getElementById("totalMedicines").textContent = medicines.length;
+
+        let lowStock = 0,
+            nearExpiry = 0,
+            expired = 0;
+
+        const today = new Date();
+
+        medicines.forEach(m => {
+          // Low stock
+          if (m.quantity <= m.reorder_level) lowStock++;
+
+          // Expiry checks
+          const exp = new Date(m.expiry_date);
+          const diffDays = (exp - today) / (1000 * 60 * 60 * 24);
+
+          if (diffDays < 0) expired++;
+          else if (diffDays <= 30) nearExpiry++;
+        });
+
+        document.getElementById("lowStock").textContent = lowStock;
+        document.getElementById("nearExpiry").textContent = nearExpiry;
+        document.getElementById("expired").textContent = expired;
+
+        // ALERTS LIST
+        const alertBox = document.getElementById("dashboardAlerts");
+
+        let html = "";
+
+        if (expired > 0)
+          html += `<div class="alert alert-danger">⚠ ${expired} medicines are expired!</div>`;
+
+        if (nearExpiry > 0)
+          html += `<div class="alert alert-warning">⚠ ${nearExpiry} medicines are near expiry (within 30 days)!</div>`;
+
+        if (lowStock > 0)
+          html += `<div class="alert alert-success">⚠ ${lowStock} medicines are low in stock!</div>`;
+
+        if (html === "")
+          html = `<div class="alert alert-info">Everything looks good! No urgent alerts.</div>`;
+
+        alertBox.innerHTML = html;
+
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadDashboard();
+    // Auto-refresh dashboard every 8 seconds to reflect backend changes
+    setInterval(loadDashboard, 8000);
+
+    // Listen for cross-tab updates (e.g., medicines added/updated)
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'mt_refresh_medicines') loadDashboard();
+    });
+  </script>
+
+</body>
+</html>

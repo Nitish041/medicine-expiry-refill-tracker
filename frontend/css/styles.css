@@ -1,0 +1,277 @@
+/* ============================
+   Green + White Theme Styling
+   ============================ */
+
+:root {
+  --green-main: #16a34a;
+  --green-dark: #065f46;
+  --bg-light: #f6fdf8;
+  --text-dark: #0f172a;
+  --muted: #6b7280;
+  --card-bg: #ffffff;
+}
+
+body {
+  font-family: "Inter", Arial, sans-serif;
+  background: var(--bg-light);
+  color: var(--text-dark);
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 1100px;
+}
+
+/* NAVBAR */
+.navbar {
+  background: linear-gradient(90deg, #10b981, #059669);
+  color: white;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  color: white !important;
+}
+
+.btn-outline-light {
+  border-color: white;
+  color: white;
+}
+
+.btn-outline-light:hover {
+  background: white;
+  color: var(--green-dark);
+}
+
+/* CARDS */
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 30px rgba(6, 95, 70, 0.08);
+}
+
+/* BUTTONS */
+.btn-primary {
+  background: var(--green-main);
+  border: none;
+}
+
+.btn-primary:hover {
+  background: var(--green-dark);
+}
+
+.btn-outline-primary {
+  color: var(--green-main);
+  border-color: var(--green-main);
+}
+
+.btn-outline-primary:hover {
+  background: var(--green-main);
+  color: white;
+}
+
+.btn-success {
+  background: var(--green-dark);
+  border: none;
+}
+
+.btn-success:hover {
+  background: #064e3b;
+}
+
+/* FORMS */
+.form-control,
+.form-select {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+/* TABLES */
+.table thead th {
+  background: #e7f8ee;
+}
+
+/* ALERTS */
+.alert-success {
+  background: #ecfdf5;
+  color: var(--green-dark);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.alert-warning {
+  background: #fefce8;
+  color: #854d0e;
+}
+
+.alert-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* SPACER BELOW FIXED NAV */
+.fixed-top-spacer {
+  height: 85px;
+}
+
+/* FOOTER */
+footer {
+  color: var(--muted);
+  margin: 40px 0;
+  text-align: center;
+}
+
+/* ============================
+   3D ELEMENTS & ANIMATIONS
+   ============================ */
+
+/* 3D Cube Container */
+.cube-wrapper {
+  perspective: 1000px;
+  width: 100px;
+  height: 100px;
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.cube {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  animation: rotateCube 20s infinite linear;
+}
+
+.cube-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(16, 185, 129, 0.15);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--green-main);
+}
+
+.cube-face:nth-child(1) { transform: rotateY(0deg) translateZ(50px); }
+.cube-face:nth-child(2) { transform: rotateY(90deg) translateZ(50px); }
+.cube-face:nth-child(3) { transform: rotateY(180deg) translateZ(50px); }
+.cube-face:nth-child(4) { transform: rotateY(270deg) translateZ(50px); }
+.cube-face:nth-child(5) { transform: rotateX(90deg) translateZ(50px); }
+.cube-face:nth-child(6) { transform: rotateX(-90deg) translateZ(50px); }
+
+@keyframes rotateCube {
+  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-30px); }
+}
+
+.floating {
+  animation: float 6s ease-in-out infinite;
+}
+
+.floating-slow {
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+/* Floating medicine icons */
+.float-element {
+  position: fixed;
+  font-size: 3rem;
+  opacity: 0.1;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.float-element:nth-child(1) {
+  top: 10%;
+  left: 5%;
+  animation: float 7s ease-in-out infinite;
+}
+
+.float-element:nth-child(2) {
+  top: 20%;
+  right: 8%;
+  animation: float-slow 9s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.float-element:nth-child(3) {
+  top: 60%;
+  left: 10%;
+  animation: float 8s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+.float-element:nth-child(4) {
+  top: 50%;
+  right: 5%;
+  animation: float-slow 10s ease-in-out infinite;
+  animation-delay: 0.5s;
+}
+
+/* Gradient backgrounds for pages */
+.page-gradient {
+  background: linear-gradient(135deg, #f6fdf8 0%, #e7f8ee 50%, #f0fdf4 100%);
+  min-height: 100vh;
+}
+
+/* Enhanced page hero with 3D effect */
+.hero-3d {
+  perspective: 800px;
+}
+
+.hero-3d img {
+  transform: rotateX(2deg) rotateY(-2deg);
+  transition: transform 0.3s ease;
+}
+
+.hero-3d img:hover {
+  transform: rotateX(0deg) rotateY(0deg) scale(1.02);
+}
+
+/* Glowing cards */
+.card-glow {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.card-glow:hover {
+  box-shadow: 0 12px 40px rgba(16, 185, 129, 0.15);
+  transform: translateY(-2px);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+/* Stats cards enhanced */
+.stat-card {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02));
+  border-left: 4px solid var(--green-main);
+}
+
+.stat-card .stat-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--green-main);
+  margin: 10px 0;
+}
+
+.stat-card .stat-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}

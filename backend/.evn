@@ -1,0 +1,12 @@
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=Nitish@12345
+DB_NAME=medicine_tracker
+PORT=3000
+        
+
+
+
+
+
+    

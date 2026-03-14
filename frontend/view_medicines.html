@@ -1,0 +1,304 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>View Medicines • Medicine Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="page-gradient">
+
+  <!-- NAVBAR -->
+  <nav class="navbar fixed-top" style="background: linear-gradient(90deg,#10b981,#059669); box-shadow:0 6px 18px rgba(0,0,0,.06); z-index: 100;">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a class="navbar-brand text-white fw-bold" href="dashboard.html">🏥 Medicine Tracker</a>
+
+      <div class="d-none d-md-flex gap-2">
+        <a class="btn btn-sm btn-outline-light" href="add_medicine.html">Add Medicine</a>
+        <a class="btn btn-sm btn-outline-light" href="suppliers.html">Suppliers</a>
+        <a class="btn btn-sm btn-outline-light" href="alerts.html">Alerts</a>
+        <a class="btn btn-sm btn-outline-light" href="scanner.html">Scanner</a>
+      </div>
+
+      <div class="d-flex gap-2 align-items-center">
+        <span id="navUser" class="text-white me-2 d-none d-md-inline"></span>
+        <button class="btn btn-outline-light btn-sm" onclick="logoutAndRedirect()">Logout</button>
+        <button class="btn btn-light btn-sm d-md-none" type="button" id="mobileMenuBtn">Menu</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="fixed-top-spacer"></div>
+
+  <!-- PAGE CONTENT -->
+  <div class="container mt-4" style="position: relative; z-index: 10;">
+    <div class="d-flex justify-content-between align-items-center">
+      <h3 class="fw-bold" style="color: var(--green-main);">💊 All Medicines</h3>
+      <div class="d-flex gap-2">
+        <input id="q" class="form-control form-control-sm" placeholder="Search by name, batch, barcode..." style="min-width:260px">
+        <button id="refreshBtn" class="btn btn-outline-primary btn-sm">Refresh</button>
+      </div>
+    </div>
+
+    <div class="card mt-3 p-3 card-glow">
+      <div class="table-responsive">
+        <table class="table table-hover" id="medTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Batch</th>
+              <th>Manufacturer</th>
+              <th>Supplier</th>
+              <th>Expiry</th>
+              <th>Qty</th>
+              <th>Reorder</th>
+              <th>Barcode</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="tableMsg" class="mt-2"></div>
+    </div>
+  </div>
+
+  <!-- EDIT MODAL -->
+  <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Medicine</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="editMsg"></div>
+          <div class="row g-3">
+            <input id="edit_id" type="hidden">
+            <div class="col-md-6"><label class="form-label">Name</label><input id="edit_name" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Batch No</label><input id="edit_batch" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Manufacturer</label><input id="edit_manufacturer" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Barcode</label><input id="edit_barcode" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Expiry Date</label><input id="edit_expiry" type="date" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Price</label><input id="edit_price" type="number" step="0.01" class="form-control"></div>
+            <div class="col-md-3"><label class="form-label">Quantity</label><input id="edit_qty" type="number" class="form-control"></div>
+            <div class="col-md-4"><label class="form-label">Reorder Level</label><input id="edit_reorder" type="number" class="form-control"></div>
+            <div class="col-md-8"><label class="form-label">Supplier</label><select id="edit_supplier" class="form-select"><option value=\"\">Select supplier</option></select></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="saveEditBtn" class="btn btn-primary">Save</button>
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW BARCODE MODAL -->
+  <div class="modal fade" id="barcodeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content p-3 text-center">
+        <div class="modal-body">
+          <div id="barcodeImg"></div>
+          <p id="barcodeText" class="mt-3"></p>
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    const tbody = document.querySelector('#medTable tbody');
+    const tableMsg = document.getElementById('tableMsg');
+    let allMeds = [];
+
+    async function loadSuppliersTo(selectEl) {
+      try {
+        const sups = await apiGet('/suppliers');
+        selectEl.innerHTML = '<option value=\"\">Select supplier</option>';
+        sups.forEach(s => {
+          const o = document.createElement('option');
+          o.value = s.supplier_id; o.textContent = s.name;
+          selectEl.appendChild(o);
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Load medicines and populate table
+    async function loadMedicines() {
+      tbody.innerHTML = '';
+      tableMsg.innerHTML = '';
+      try {
+        const meds = await apiGet('/medicines');
+        allMeds = meds;
+        if (!meds.length) {
+          tableMsg.innerHTML = '<div class="alert alert-info">No medicines found. Add some from Add Medicine.</div>';
+          return;
+        }
+        meds.forEach(m => {
+          const tr = document.createElement('tr');
+          const exp = m.expiry_date ? m.expiry_date.split('T')[0] : '';
+          const supplierName = m.supplier_name || (m.supplier_id ? ('#' + m.supplier_id) : '');
+          tr.innerHTML = `
+            <td>${escapeHtml(m.name)}</td>
+            <td>${escapeHtml(m.batch_no || '')}</td>
+            <td>${escapeHtml(m.manufacturer || '')}</td>
+            <td>${escapeHtml(supplierName)}</td>
+            <td>${exp}</td>
+            <td>${m.quantity}</td>
+            <td>${m.reorder_level || '-'}</td>
+            <td>${m.barcode ? '<button class="btn btn-sm btn-outline-primary viewBarcodeBtn" data-code="'+escapeAttr(m.barcode)+'">View</button>' : '-'}</td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary editBtn" data-id="${m.medicine_id}">Edit</button>
+              <button class="btn btn-sm btn-outline-danger ms-1 delBtn" data-id="${m.medicine_id}">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error(err);
+        tableMsg.innerHTML = '<div class="alert alert-danger">Failed to load medicines</div>';
+      }
+    }
+
+    function escapeHtml(s){ if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function escapeAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
+
+    // Search filter
+    document.getElementById('q').addEventListener('input', (e)=>{
+      const q = e.target.value.trim().toLowerCase();
+      const rows = allMeds.filter(m=>{
+        return (m.name||'').toLowerCase().includes(q) || (m.batch_no||'').toLowerCase().includes(q) || (m.barcode||'').toLowerCase().includes(q) || (m.manufacturer||'').toLowerCase().includes(q);
+      });
+      tbody.innerHTML = '';
+      rows.forEach(m=>{
+        const tr = document.createElement('tr');
+        const exp = m.expiry_date ? m.expiry_date.split('T')[0] : '';
+        const supplierName = m.supplier_name || (m.supplier_id ? ('#' + m.supplier_id) : '');
+        tr.innerHTML = `
+          <td>${escapeHtml(m.name)}</td>
+          <td>${escapeHtml(m.batch_no || '')}</td>
+          <td>${escapeHtml(m.manufacturer || '')}</td>
+          <td>${escapeHtml(supplierName)}</td>
+          <td>${exp}</td>
+          <td>${m.quantity}</td>
+          <td>${m.reorder_level || '-'}</td>
+          <td>${m.barcode ? '<button class="btn btn-sm btn-outline-primary viewBarcodeBtn" data-code="'+escapeAttr(m.barcode)+'">View</button>' : '-'}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary editBtn" data-id="${m.medicine_id}">Edit</button>
+            <button class="btn btn-sm btn-outline-danger ms-1 delBtn" data-id="${m.medicine_id}">Delete</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    });
+
+    // Refresh button
+    document.getElementById('refreshBtn').addEventListener('click', loadMedicines);
+
+    // Delegate click events (edit/delete/view barcode)
+    tbody.addEventListener('click', async (ev) => {
+      const editBtn = ev.target.closest('.editBtn');
+      if (editBtn) {
+        const id = editBtn.dataset.id;
+        openEditModal(id);
+        return;
+      }
+      const delBtn = ev.target.closest('.delBtn');
+      if (delBtn) {
+        const id = delBtn.dataset.id;
+        if (!confirm('Delete this medicine?')) return;
+        try {
+          const res = await fetch(API_BASE + '/medicines/' + id, { method: 'DELETE' });
+          const j = await res.json();
+          if (!res.ok) throw new Error(j.error || 'Delete failed');
+          showMsg(tableMsg, 'success', 'Medicine deleted');
+          loadMedicines();
+        } catch (e) {
+          showMsg(tableMsg, 'danger', e.message);
+        }
+        return;
+      }
+      const vBtn = ev.target.closest('.viewBarcodeBtn');
+      if (vBtn) {
+        const code = vBtn.dataset.code;
+        showBarcode(code);
+        return;
+      }
+    });
+
+    // Edit modal flow
+    async function openEditModal(id) {
+      const med = allMeds.find(x => String(x.medicine_id) === String(id));
+      if (!med) { showMsg(document.getElementById('editMsg'), 'danger', 'Record not found'); return; }
+
+      // fill values
+      document.getElementById('edit_id').value = med.medicine_id;
+      document.getElementById('edit_name').value = med.name || '';
+      document.getElementById('edit_batch').value = med.batch_no || '';
+      document.getElementById('edit_manufacturer').value = med.manufacturer || '';
+      document.getElementById('edit_barcode').value = med.barcode || '';
+      document.getElementById('edit_expiry').value = med.expiry_date ? med.expiry_date.split('T')[0] : '';
+      document.getElementById('edit_price').value = med.price || '';
+      document.getElementById('edit_qty').value = med.quantity || 0;
+      document.getElementById('edit_reorder').value = med.reorder_level || 0;
+
+      // load suppliers into dropdown and set value
+      await loadSuppliersTo(document.getElementById('edit_supplier'));
+      if (med.supplier_id) document.getElementById('edit_supplier').value = med.supplier_id;
+
+      // show modal
+      const modal = new bootstrap.Modal(document.getElementById('editModal'));
+      modal.show();
+    }
+
+    document.getElementById('saveEditBtn').addEventListener('click', async () => {
+      const id = document.getElementById('edit_id').value;
+      const data = {
+        name: document.getElementById('edit_name').value,
+        batch_no: document.getElementById('edit_batch').value,
+        manufacturer: document.getElementById('edit_manufacturer').value,
+        barcode: document.getElementById('edit_barcode').value || null,
+        expiry_date: document.getElementById('edit_expiry').value,
+        price: parseFloat(document.getElementById('edit_price').value) || 0,
+        quantity: parseInt(document.getElementById('edit_qty').value) || 0,
+        reorder_level: parseInt(document.getElementById('edit_reorder').value) || 0,
+        supplier_id: document.getElementById('edit_supplier').value || null
+      };
+      try {
+        const res = await fetch(API_BASE + '/medicines/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error || 'Update failed');
+        showMsg(document.getElementById('editMsg'), 'success', 'Updated');
+        // close modal after short delay
+        setTimeout(()=>{ bootstrap.Modal.getInstance(document.getElementById('editModal')).hide(); loadMedicines(); }, 800);
+      } catch (e) {
+        showMsg(document.getElementById('editMsg'), 'danger', e.message);
+      }
+    });
+
+    // View barcode helper — shows text and a simple barcode image (via external barcode API)
+    function showBarcode(code) {
+      document.getElementById('barcodeText').textContent = code;
+      const imgHtml = `<img src="https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(code)}&code=Code128&multiplebarcodes=false&translate-esc=false&unit=Fit&dpi=96&imagetype=png" style="max-width:100%;">`;
+      document.getElementById('barcodeImg').innerHTML = imgHtml;
+      const modal = new bootstrap.Modal(document.getElementById('barcodeModal'));
+      modal.show();
+    }
+
+    // initialize
+    loadMedicines();
+    loadSuppliersTo(document.getElementById('edit_supplier'));
+  </script>
+
+</body>
+</html>

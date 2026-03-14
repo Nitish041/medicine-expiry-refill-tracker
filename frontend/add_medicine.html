@@ -1,0 +1,168 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Add Medicine • Medicine Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="page-gradient">
+
+  <!-- ============================
+       NAVBAR
+  ============================= -->
+  <nav class="navbar fixed-top" style="background: linear-gradient(90deg,#10b981,#059669); box-shadow:0 6px 18px rgba(0,0,0,.06); z-index: 100;">
+    <div class="container d-flex align-items-center justify-content-between">
+      <a class="navbar-brand text-white fw-bold" href="dashboard.html">🏥 Medicine Tracker</a>
+
+      <div class="d-none d-md-flex gap-2">
+        <a class="btn btn-sm btn-outline-light" href="dashboard.html">Dashboard</a>
+        <a class="btn btn-sm btn-outline-light" href="view_medicines.html">View Medicines</a>
+        <a class="btn btn-sm btn-outline-light" href="add_medicine.html">Add Medicine</a>
+        <a class="btn btn-sm btn-outline-light" href="suppliers.html">Suppliers</a>
+        <a class="btn btn-sm btn-outline-light" href="alerts.html">Alerts</a>
+        <a class="btn btn-sm btn-outline-light" href="scanner.html">Scanner</a>
+      </div>
+
+      <div class="d-flex gap-2 align-items-center">
+        <span id="navUser" class="text-white me-2 d-none d-md-inline"></span>
+        <button class="btn btn-outline-light btn-sm" onclick="logoutAndRedirect()">Logout</button>
+        <button class="btn btn-light btn-sm d-md-none" type="button" id="mobileMenuBtn">Menu</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="fixed-top-spacer"></div>
+
+  <!-- ============================
+       PAGE CONTENT
+  ============================= -->
+  <div class="container mt-4" style="position: relative; z-index: 10;">
+    <h2 class="fw-bold mb-1" style="color: var(--green-main);">➕ Add Medicine</h2>
+    <p class="text-muted">Add new stock items with expiry, batch, supplier and barcode details.</p>
+
+    <div class="card p-4 card-glow">
+
+      <div class="row g-3">
+
+        <div class="col-md-6">
+          <label class="form-label">Medicine Name</label>
+          <input id="name" class="form-control" placeholder="Paracetamol 500mg">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Batch No</label>
+          <input id="batch_no" class="form-control" placeholder="BCH12345">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Manufacturer</label>
+          <input id="manufacturer" class="form-control" placeholder="Cipla Ltd.">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Barcode</label>
+          <input id="barcode" class="form-control" placeholder="8901234567890 (optional)">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Supplier</label>
+          <select id="supplier_id" class="form-select">
+            <option value="">Select supplier</option>
+          </select>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Purchase Date</label>
+          <input id="purchase_date" type="date" class="form-control">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Expiry Date</label>
+          <input id="expiry_date" type="date" class="form-control">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Price (₹)</label>
+          <input id="price" type="number" step="0.01" class="form-control">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Quantity</label>
+          <input id="quantity" type="number" class="form-control">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">Reorder Level</label>
+          <input id="reorder_level" type="number" class="form-control">
+        </div>
+
+      </div>
+
+      <button id="saveBtn" class="btn btn-primary mt-4">Save Medicine</button>
+
+      <div id="msg" class="mt-3"></div>
+
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+
+  <script>
+    // Load suppliers in dropdown
+    async function loadSuppliers() {
+      const suppliers = await apiGet("/suppliers");
+      const select = document.getElementById("supplier_id");
+
+      suppliers.forEach(s => {
+        const opt = document.createElement("option");
+        opt.value = s.supplier_id;
+        opt.textContent = s.name;
+        select.appendChild(opt);
+      });
+    }
+
+    loadSuppliers();
+
+    // Save medicine
+    document.getElementById("saveBtn").addEventListener("click", async () => {
+      const data = {
+        name: document.getElementById("name").value.trim(),
+        batch_no: document.getElementById("batch_no").value.trim(),
+        manufacturer: document.getElementById("manufacturer").value.trim(),
+        barcode: document.getElementById("barcode").value.trim() || null,
+        supplier_id: document.getElementById("supplier_id").value,
+        purchase_date: document.getElementById("purchase_date").value,
+        expiry_date: document.getElementById("expiry_date").value,
+        price: parseFloat(document.getElementById("price").value),
+        quantity: parseInt(document.getElementById("quantity").value),
+        reorder_level: parseInt(document.getElementById("reorder_level").value)
+      };
+
+      // Basic validation
+      if (!data.name || !data.batch_no || !data.manufacturer || !data.supplier_id ||
+          !data.purchase_date || !data.expiry_date || !data.price || !data.quantity) {
+        showMsg(document.getElementById("msg"), "warning", "Please fill all required fields.");
+        return;
+      }
+
+      const res = await apiPost("/medicines", data);
+
+      if (res.error) {
+        showMsg(document.getElementById("msg"), "danger", res.error);
+      } else {
+        showMsg(document.getElementById("msg"), "success", "Medicine added successfully!");
+        // notify other pages to refresh lists and dashboard
+        try { localStorage.setItem('mt_refresh_medicines', Date.now()); } catch (e) {}
+      }
+    });
+  </script>
+
+</body>
+</html>
