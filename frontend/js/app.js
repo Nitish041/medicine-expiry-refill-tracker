@@ -3,7 +3,7 @@
 // =============================
 
 // Base API URL
-const API_BASE = "http://localhost:3000/api";
+const API_BASE = "https://medicine-expiry-refill-tracker.onrender.com/api";
 
 // -----------------------------
 //  USER SESSION HANDLING
