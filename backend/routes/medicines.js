@@ -35,8 +35,10 @@ res.status(500).json({ error: "Failed to fetch medicines" });
 router.post("/", async (req, res) => {
 const pool = getPool(req);
 
+// Accept both batch_no and batch_number
 const {
 name,
+batch_no,
 batch_number,
 manufacturer,
 barcode,
@@ -48,10 +50,11 @@ quantity,
 reorder_level
 } = req.body;
 
-// Validation (supplier_id removed so your form works)
+const finalBatchNumber = batch_number || batch_no;
+
 if (
 !name ||
-!batch_number ||
+!finalBatchNumber ||
 !manufacturer ||
 !purchase_date ||
 !expiry_date ||
@@ -68,7 +71,7 @@ const [result] = await pool.query(
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 [
 name,
-batch_number,
+finalBatchNumber,
 manufacturer,
 barcode || null,
 supplier_id || null,
